@@ -1,0 +1,240 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Transport vositalari{% endblock %}
+
+{% block content %}
+
+{% if status == "detail" %}
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">Transport vositasi ma'lumotlari</h4>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr><th>ID</th><td>{{ obj.id }}</td></tr>
+                    <tr><th>Davlat raqami</th><td>{{ obj.license_plate }}</td></tr>
+                    <tr><th>Transport turi</th><td>{{ obj.vehicle_type }}</td></tr>
+                    <tr><th>O‘rindiqlar soni</th><td>{{ obj.capacity }}</td></tr>
+                    <tr><th>Haydovchi ismi</th><td>{{ obj.driver_name|default:"Yo‘q" }}</td></tr>
+                    <tr>
+                        <th>Faolligi</th>
+                        <td>
+                            {% if obj.is_active %}
+                                <span class="badge bg-success">Faol</span>
+                            {% else %}
+                                <span class="badge bg-danger">Faol emas</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <hr>
+
+            <a href="{% url 'vehicle-list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Ro‘yxatga qaytish
+            </a>
+            <a href="{% url 'dashboard-home' %}" class="btn btn-info">
+                <i class="fas fa-home"></i> Bosh sahifa
+            </a>
+            <a href="{% url 'vehicle-edit' pk=obj.id %}" class="btn btn-success">
+                <i class="fas fa-pen"></i> Tahrirlash
+            </a>
+            <a href="{% url 'vehicle-delete' pk=obj.id %}" class="btn btn-danger"
+               onclick="return confirm('Rostdan ham o‘chirmoqchimisiz?')">
+                <i class="fas fa-trash"></i> O‘chirish
+            </a>
+        </div>
+    </div>
+
+{% elif status == "form" %}
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">
+                {% if obj %}Transportni tahrirlash{% else %}Yangi transport qo‘shish{% endif %}
+            </h4>
+        </div>
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if obj %}
+                <div class="alert alert-info">
+                    <strong>ID:</strong> {{ obj.id }}
+                </div>
+                {% endif %}
+
+                <div class="row g-4">
+                    <!-- Davlat raqami -->
+                    <div class="col-md-6">
+                        <label class="form-label">Davlat raqami <span class="text-danger">*</span></label>
+                        <input type="text" name="license_plate" class="form-control form-control-lg"
+                               placeholder="01A123BC yoki 70O070OO" maxlength="10"
+                               value="{{ obj.license_plate }}" required>
+                    </div>
+
+                    <!-- Transport turi -->
+                    <div class="col-md-6">
+                        <label class="form-label">Transport turi <span class="text-danger">*</span></label>
+                        <select name="vehicle_type" class="form-select form-select-lg" required>
+                            <option value="">--- Tanlang ---</option>
+                            {% for value, label in vehicle_types %}
+                                <option value="{{ value }}"
+                                    {% if obj and obj.vehicle_type == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- O‘rindiqlar soni -->
+                    <div class="col-md-6">
+                        <label class="form-label">O‘rindiqlar soni <span class="text-danger">*</span></label>
+                        <input type="number" name="capacity" class="form-control form-control-lg"
+                               min="1" max="100" value="{{ obj.capacity|default:'' }}" required>
+                    </div>
+
+                    <!-- Haydovchi ismi -->
+                    <div class="col-md-6">
+                        <label class="form-label">Haydovchi ismi</label>
+                        <input type="text" name="driver_name" class="form-control form-control-lg"
+                               placeholder="Masalan: Aliyev Sardor" value="{{ obj.driver_name }}">
+                    </div>
+
+                    <!-- Faollik holati -->
+                    <div class="col-md-6">
+                        <label class="form-label">Holati</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active_switch"
+                                   {% if obj.is_active != False %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active_switch">
+                                {% if obj.is_active != False %}Faol{% else %}Faol emas{% endif %}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-5">
+
+                <div class="d-grid d-md-flex justify-content-end gap-3">
+                    <button type="submit" class="btn btn-success btn-lg px-5">
+                        <i class="fas fa-save"></i> Saqlash
+                    </button>
+                </div>
+            </form>
+
+            <hr class="my-4">
+
+            <a href="{% url 'vehicle-list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Ro‘yxatga qaytish
+            </a>
+            <a href="{% url 'dashboard-home' %}" class="btn btn-info">
+                <i class="fas fa-home"></i> Bosh sahifa
+            </a>
+            {% if obj %}
+            <a href="{% url 'vehicle-delete' pk=obj.id %}" class="btn btn-danger float-end"
+               onclick="return confirm('Bu transportni o‘chirmoqchimisiz?')">
+                <i class="fas fa-trash"></i> O‘chirish
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+{% else %}
+    <!-- Ro‘yxat ko‘rinishi -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">Transport vositalari</h4>
+            <a href="{% url 'vehicle-add' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Yangi qo‘shish
+            </a>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered text-center align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>№</th>
+                            <th>Davlat raqami</th>
+                            <th>Turi</th>
+                            <th>O‘rindiqlar</th>
+                            <th>Haydovchi</th>
+                            <th>Holati</th>
+                            <th>Amallar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vehicle in result %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ vehicle.license_plate }}</strong></td>
+                            <td>{{ vehicle.vehicle_type }}</td>
+                            <td>{{ vehicle.capacity }}</td>
+                            <td>{{ vehicle.driver_name|default:"—" }}</td>
+                            <td>
+                                {% if vehicle.is_active %}
+                                    <span class="badge bg-success">Faol</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Nofaol</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'vehicle-info' pk=vehicle.id %}" class="btn btn-sm btn-outline-info" title="Ko‘rish">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'vehicle-edit' pk=vehicle.id %}" class="btn btn-sm btn-outline-success" title="Tahrirlash">
+                                    <i class="fas fa-pen-to-square"></i>
+                                </a>
+                                <a href="{% url 'vehicle-delete' pk=vehicle.id %}" class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('O‘chirishni tasdiqlang')" title="O‘chirish">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-muted py-4">Hozircha hech qanday transport qo‘shilmagan</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginatsiya -->
+            {% if result.has_other_pages %}
+            <nav aria-label="Sahifalar">
+                <ul class="pagination justify-content-center mt-4">
+                    {% if result.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ result.previous_page_number }}">« Oldingi</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">« Oldingi</span></li>
+                    {% endif %}
+
+                    {% for num in result.paginator.page_range %}
+                        {% if result.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if result.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ result.next_page_number }}">Keyingi »</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Keyingi »</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

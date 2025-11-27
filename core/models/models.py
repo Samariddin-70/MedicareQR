@@ -21,7 +21,7 @@ class Route(models.Model):
     estimated_time = models.DurationField(verbose_name="Taxminiy vaqt")
 
     def __str__(self):
-        return f"{self.name} ({self.start_point} → {self.end_point})"
+        return f" {self.start_point} → {self.end_point}"
 
     class Meta:
         verbose_name = "Marshrut"
@@ -44,7 +44,7 @@ class Vehicle(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Faol")
 
     def __str__(self):
-        return f"{self.get_vehicle_type_display()} - {self.license_plate}"
+        return f"{self.get_vehicle_type_display()} "
 
     class Meta:
         verbose_name = "Transport vositasi"

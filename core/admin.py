@@ -23,5 +23,5 @@ class TripAdmin(admin.ModelAdmin):
     search_fields = ('number',)
 
 
-# admin.site.register(Ticket)
-# admin.site.register(TicketValidation)
+admin.site.register(Ticket)
+admin.site.register(TicketValidation)

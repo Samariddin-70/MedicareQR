@@ -1,0 +1,284 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Reyslar{% endblock %}
+
+{% block style %}
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
+
+    <!-- Flatpickr JS (CSS dan keyin joylashishi shart emas, lekin yaxshiroq) -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Uzbek locale (ixtiyoriy, lekin tavsiya etiladi) -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/uz.js"></script>
+{% endblock %}
+
+{% block content %}
+
+{% if status == "detail" %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">Reys ma'lumotlari</h4>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr><th>ID</th><td>{{ obj.id }}</td></tr>
+                    <tr><th>Marshrut</th><td>{{ obj.route }}</td></tr>
+                    <tr><th>Transport</th><td>{{ obj.vehicle }}</td></tr>
+                    <tr><th>Jo‘nash vaqti</th><td>{{ obj.departure_time|date:"d.m.Y H:i" }}</td></tr>
+                    <tr><th>Yetib borish vaqti</th><td>{{ obj.arrival_time|date:"d.m.Y H:i" }}</td></tr>
+                    <tr><th>Narxi</th><td>{{ obj.price|floatformat:0 }} so‘m</td></tr>
+                </tbody>
+            </table>
+
+            <hr>
+
+            <a href="{% url 'trip-list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Ro‘yxatga qaytish
+            </a>
+            <a href="{% url 'dashboard-home' %}" class="btn btn-info">
+                <i class="fas fa-home"></i> Bosh sahifa
+            </a>
+            <a href="{% url 'trip-edit' pk=obj.id %}" class="btn btn-success">
+                <i class="fas fa-pen"></i> Tahrirlash
+            </a>
+            <a href="{% url 'trip-delete' pk=obj.id %}" class="btn btn-danger"
+               onclick="return confirm('Rostdan ham o‘chirmoqchimisiz?')">
+                <i class="fas fa-trash"></i> O‘chirish
+            </a>
+        </div>
+    </div>
+
+{% elif status == "form" %}
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">
+                {% if obj %}Reysni tahrirlash{% else %}Yangi reys qo‘shish{% endif %}
+            </h4>
+        </div>
+        <div class="card-body">
+
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <table class="table table-bordered mb-4">
+                    <thead class="table-primary">
+                        <tr>
+                            <th style="width: 35%;">Maydon</th>
+                            <th style="width: 65%;">Qiymat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if obj %}
+                        <tr>
+                            <td><strong>ID</strong></td>
+                            <td class="fw-bold">{{ obj.id }}</td>
+                        </tr>
+                        {% endif %}
+
+                        <tr>
+                            <td><strong>Marshrut</strong></td>
+                            <td>
+                                <select name="route" class="form-select" required>
+                                    <option value="">--- Tanlang ---</option>
+                                    {% for route in routes %}
+                                        <option value="{{ route.id }}" {% if obj and obj.route.id == route.id %}selected{% endif %}>
+                                            {{ route }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td><strong>Transport turi</strong></td>
+                            <td>
+                                <select name="vehicle" class="form-select" required>
+                                    <option value="">--- Tanlang ---</option>
+                                    {% for vehicle in vehicle_types %}
+                                        <option value="{{ vehicle.id }}" {% if obj and obj.vehicle.id == vehicle.id %}selected{% endif %}>
+                                            {{ vehicle.vehicle_type }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td><strong>Narxi (so‘m)</strong></td>
+                            <td>
+                                <div class="input-group">
+                                    <input type="number" name="price" class="form-control form-control-lg text-end"
+                                           value="{{ obj.price|default:'' }}" placeholder="175000" step="1000" min="0" required>
+                                    <span class="input-group-text">so‘m</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Sana va vaqt tanlash -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <h5 class="text-primary"><i class="bi bi-box-arrow-up-right"></i> Jo‘nash vaqti</h5>
+                        <input type="text" class="form-control form-control-lg flatpickr-datetime"
+                               id="departure-datetime" placeholder="25.11.2025 14:30"
+                               value="{% if obj %}{{ obj.departure_time|date:'d.m.Y H:i' }}{% endif %}"
+                               autocomplete="off" required>
+                        <input type="hidden" name="departure_time" id="hidden-departure-time"
+                               value="{% if obj %}{{ obj.departure_time|date:'Y-m-d H:i:00' }}{% endif %}">
+                    </div>
+
+                    <div class="col-lg-6">
+                        <h5 class="text-success"><i class="bi bi-geo-alt-fill"></i> Yetib borish vaqti</h5>
+                        <input type="text" class="form-control form-control-lg flatpickr-datetime"
+                               id="arrival-datetime" placeholder="26.11.2025 08:00"
+                               value="{% if obj %}{{ obj.arrival_time|date:'d.m.Y H:i' }}{% endif %}"
+                               autocomplete="off" required>
+                        <input type="hidden" name="arrival_time" id="hidden-arrival-time"
+                               value="{% if obj %}{{ obj.arrival_time|date:'Y-m-d H:i:00' }}{% endif %}">
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-check2-circle"></i> Saqlash
+                    </button>
+                </div>
+            </form>
+
+            <hr class="my-4">
+
+            <a href="{% url 'trip-list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Ro‘yxatga qaytish
+            </a>
+            <a href="{% url 'dashboard-home' %}" class="btn btn-info">
+                <i class="fas fa-home"></i> Bosh sahifa
+            </a>
+            {% if obj %}
+            <a href="{% url 'trip-delete' pk=obj.id %}" class="btn btn-danger float-end"
+               onclick="return confirm('Rostdan ham o‘chirmoqchimisiz?')">
+                <i class="fas fa-trash"></i> O‘chirish
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+{% else %}
+    <!-- Ro‘yxat ko‘rinishi -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">Reyslar ro‘yxati</h4>
+            <a href="{% url 'trip-add' %}" class="btn btn-primary">
+                <i class="ri-add-fill"></i> Yangi qo‘shish
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped text-center">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Marshrut</th>
+                            <th>Transport</th>
+                            <th>Jo‘nash</th>
+                            <th>Yetib borish</th>
+                            <th>Narxi</th>
+                            <th>Amallar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trip in result %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ trip.route }}</td>
+                            <td>{{ trip.vehicle }}</td>
+                            <td>{{ trip.departure_time|date:"d.m H:i" }}</td>
+                            <td>{{ trip.arrival_time|date:"d.m H:i" }}</td>
+                            <td>{{ trip.price|floatformat:0 }} so‘m</td>
+                            <td>
+                                <a href="{% url 'trip-info' pk=trip.id %}" class="btn btn-sm btn-outline-info" title="Ko‘rish">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                <a href="{% url 'trip-edit' pk=trip.id %}" class="btn btn-sm btn-outline-success" title="Tahrirlash">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <a href="{% url 'trip-delete' pk=trip.id %}" class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('O‘chirishni tasdiqlang')" title="O‘chirish">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="7" class="text-center text-muted">Hech nima topilmadi</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginatsiya -->
+            {% if result.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if result.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page={{ result.previous_page_number }}">&laquo;</a></li>
+                    {% endif %}
+
+                    {% for num in result.paginator.page_range %}
+                        {% if result.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if result.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ result.next_page_number }}">&raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    flatpickr(".flatpickr-datetime", {
+        enableTime: true,
+        dateFormat: "d.m.Y H:i",
+        time_24hr: true,
+        locale: "uz",
+        minDate: "today",
+        onChange: function(selectedDates, dateStr, instance) {
+            const hiddenId = instance.element.id === "departure-datetime" ? "hidden-departure-time" : "hidden-arrival-time";
+            const hiddenInput = document.getElementById(hiddenId);
+
+            if (dateStr) {
+                const [d, m, rest] = dateStr.split('.');
+                const [y, t] = rest.trim().split(' ');
+                hiddenInput.value = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')} ${t}:00`;
+            } else {
+                hiddenInput.value = "";
+            }
+        }
+    });
+
+    // Sahifa yuklanganda eski qiymatlarni ham to‘g‘rilash
+    document.querySelectorAll(".flatpickr-datetime").forEach(input => {
+        if (input.value) {
+            const hiddenId = input.id === "departure-datetime" ? "hidden-departure-time" : "hidden-arrival-time";
+            const hidden = document.getElementById(hiddenId);
+            const [d, m, rest] = input.value.split('.');
+            const [y, t] = rest.trim().split(' ');
+            hidden.value = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')} ${t}:00`;
+        }
+    });
+});
+</script>
+{% endblock %}
